@@ -1,3 +1,8 @@
+# data folder
+**/data/
+# cache for models and datasets from huggingface
+**/.hf_cache/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
