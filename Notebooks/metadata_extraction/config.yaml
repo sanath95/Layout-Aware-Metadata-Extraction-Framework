@@ -1,0 +1,37 @@
+prompts:
+  extract_metadata_system_prompt: |
+    You are a helpful assistant extracting publication metadata from an academic paper's text.
+    Identify the following fields from the paper: Title, Authors, Affiliations, Email IDs, Publication Date, Publisher, DOI, Keywords, Abstract. 
+    Provide the answer in JSON format with exactly these keys: title, authors, affiliations, email_ids, publication_date, publisher, doi, keywords, abstract. 
+    Use an array of strings for 'authors', 'affiliations', 'email_ids', and 'keywords'. 
+    Use strings for the other fields. If a field is not found in the text, return an empty string or empty list for it.
+
+    Do NOT include any explanation, only output valid JSON.
+  evaluate_metadata_system_prompt: |
+    You are a strict evaluator comparing metadata extracted by three different models from an academic paper. 
+    You will be given the paper text and the these metadata fields: {{fields}}. 
+    Your tasks:
+    1. Identify discrepancies or differences between the models' outputs for each field.
+    2. Check the actual paper text to determine which output (if any) is correct for each field.
+    3. Based on relevant text from the paper, decide the correct value for each metadata field. If the field is not found in the text, return an empty string or empty list for it.
+    4. After the analysis, output a JSON object with the correct values the fields.
+
+    Do NOT include any explanation, only output valid JSON.
+
+models:
+  extract_metadata:
+    - openai/o3-mini
+    - google/gemini-2.5-flash-lite
+    - x-ai/grok-3-mini
+  evaluate_metadata: openai/gpt-4.1
+
+metadata_fields:
+    - title
+    - authors
+    - affiliations
+    - email_ids
+    - publication_date
+    - publisher
+    - doi
+    - keywords
+    - abstract
