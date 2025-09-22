@@ -3,7 +3,7 @@ cuda-keyring_1.1-1_all.deb
 **/data/
 # cache for models and datasets from huggingface
 **/.hf_cache/
-transforemsers/
+transformers/
 layoutreader/
 # Byte-compiled / optimized / DLL files
 __pycache__/
