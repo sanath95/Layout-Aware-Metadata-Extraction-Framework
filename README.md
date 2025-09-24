@@ -35,11 +35,29 @@ Title, Authors, Affiliations, Email IDs, Publisher, Publication Date, DOI, Keywo
 
 ## Project Overview
 
+### Gold Standard Metadata Curation
+
+To evaluate metadata extraction methods reliably, this project introduces a **novel multi-model consensus framework** for building a high-quality gold-standard dataset. Instead of relying on manual annotation or a single model, the pipeline systematically leverages diverse LLMs, schema validation, and adjudication to produce accurate and robust metadata records.
+
+* **Document Selection** – 61 diverse born-digital PDFs sampled from publishers including PLOS, Elsevier, Springer, arXiv, PMLR, MDPI, and Frontiers Media to capture heterogeneous layouts and styles.
+* **Text Extraction** – PDFs parsed with PyMuPDF into plain text for standardized processing.
+* **Structured Outputs** – A Pydantic response schema was passed via the API call to enforce JSON-formatted responses with mandatory bibliographic fields.
+* **Multi-Model Annotations** – Metadata independently extracted by three LLMs: GPT-3.5-mini, Gemini-2.5-flash-lite (Google), and Grok-3-mini (X-AI).
+* **Consensus & Adjudication** – Fields with full agreement were accepted; disagreements escalated to GPT-4.1, which resolved only the contested fields using contextual reasoning.
+* **Validation** – All outputs passed through Pydantic schema checks to enforce type correctness, field coverage, and structural consistency.
+* **Final Benchmark** – Unified, machine-readable JSON records serving as a reliable reference for downstream evaluation.
+
+This framework demonstrates how **AI diversity, consensus, and selective adjudication** can replace labor-intensive manual annotation while improving robustness and generalizability. The resulting dataset offers a scalable and reproducible benchmark for metadata extraction research.
+
+![multi model consensus framework](./assets/methodology_2.png)
+
 ### Ground Truth for PDF Text Extraction
 
 Accurate metadata extraction from scholarly PDFs requires a reliable textual representation, yet challenges such as publisher-specific layouts, multi-column formatting, and parser limitations make this non-trivial. To enable rigorous benchmarking of open-source PDF parsers, a ground-truth dataset that captures real-world document variability is constructed.
 
-* **Source Dataset** – Built on the [DocBank corpus](https://doc-analysis.github.io/docbank-page) with token-level annotations (fonts, bounding boxes, textual content). From 500K pages, a curated subset of **101 first pages of arXiv papers (2014–2018)** was selected across disciplines (CS, statistics, mathematics, EE, economics).
+A curated subset of **101 first pages of arXiv papers (2014–2018)** was selected across disciplines (CS, statistics, mathematics, EE, economics).
+
+* **Source Dataset** – Built on the [DocBank corpus](https://doc-analysis.github.io/docbank-page) with token-level annotations (fonts, bounding boxes, textual content).
 * **Sampling Strategy** – Papers were chosen as the intersection of arXiv metadata and DocBank annotations, ensuring coverage of diverse layouts and styles while maintaining token-level precision.
 * **Text Construction** – Token annotations were aggregated into structural blocks via a [YOLO-DocLayNet](https://github.com/ppaanngggg/yolo-doclaynet) document layout detector, then ordered using [LayoutReader](https://github.com/ppaanngggg/layoutreader) (based on LayoutLM) to reconstruct a natural reading sequence.
 * **Evaluation Benchmark** – This dataset serves as the reference transcript for assessing five open-source parsers: `PyMuPDF`, `pypdfium2`, `pdfminer.six`, `PyPDF2`, and `pdfalto`.
