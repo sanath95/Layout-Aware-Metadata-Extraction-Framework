@@ -148,21 +148,21 @@ Evaluated **layout-aware** (GROBID) vs **language model** approaches across nine
 
 **Metrics**
 
-* **Short strings** (*title, date, publisher, DOI*): Levenshtein distance.
-* **Lists** (*authors, affiliations, emails, keywords*): F1 Score.
-* **Long text** (*abstract*): TF-IDF cosine similarity.
+* **Levenshtein Distance**: short strings(*title, date, publisher, DOI*).
+* **F1 Score**: lists (*authors, affiliations, emails, keywords*).
+* **Cosine Similarity**: long string (*abstract*).
 
 | fields           | metric           | grobid_dl | grobid_crf |    gpt_oss | phi4_mini | qwen3b |  qwen4b | llama3b |
 |:-----------------|:-----------------|----------:|-----------:|-----------:|----------:|-------:|--------:|--------:|
-| title            | Levenshtein Dist |      0.67 |      3.04  |  0.78  |      4.26 |  0.75  | 24.11   |    **0.62** |
-| doi              | Levenshtein Dist |      2.81 |      2.81  |  **2.09**  |      6.03 |  4.42  |  7.45   |    3.24 |
-| publication_date | Levenshtein Dist |      1.70 |      1.68  |  **1.27**  |      6.72 |  1.31  |  3.49   |    1.75 |
-| publisher        | Levenshtein Dist |     14.34 |     14.34  |  **3.62**  |      8.44 | 10.88  |  6.70   |    7.18 |
-| abstract         | Cosine Sim       |      **0.97** |      0.96  |  **0.97**  |      0.90 |  0.87  |  0.93   |    0.67 |
-| authors          | F1 Score         |      0.95 |      0.95  |  **0.96**  |      0.91 |  **0.96**  |  0.74   |    0.92 |
-| affiliations     | F1 Score         |      0.82 |      0.80  |  **0.91**  |      0.87 |  **0.91**  |  0.71   |    0.89 |
-| keywords         | F1 Score         |      **0.82** |      0.78  |  0.78  |      0.61 |  0.63  |  0.63   |    0.70 |
-| email_ids        | F1 Score         |      0    |     0      |  **0.98**  |      0.88 |  0.86  |  0.69   |    0.81 |
+| title            | LD |      0.67 |      3.04  |  0.78  |      4.26 |  0.75  | 24.11   |    **0.62** |
+| doi              | LD |      2.81 |      2.81  |  **2.09**  |      6.03 |  4.42  |  7.45   |    3.24 |
+| publication_date | LD |      1.70 |      1.68  |  **1.27**  |      6.72 |  1.31  |  3.49   |    1.75 |
+| publisher        | LD |     14.34 |     14.34  |  **3.62**  |      8.44 | 10.88  |  6.70   |    7.18 |
+| abstract         | CosSim |      **0.97** |      0.96  |  **0.97**  |      0.90 |  0.87  |  0.93   |    0.67 |
+| authors          | F1         |      0.95 |      0.95  |  **0.96**  |      0.91 |  **0.96**  |  0.74   |    0.92 |
+| affiliations     | F1         |      0.82 |      0.80  |  **0.91**  |      0.87 |  **0.91**  |  0.71   |    0.89 |
+| keywords         | F1         |      **0.82** |      0.78  |  0.78  |      0.61 |  0.63  |  0.63   |    0.70 |
+| email_ids        | F1         |      0    |     0      |  **0.98**  |      0.88 |  0.86  |  0.69   |    0.81 |
 
 **Efficiency**
 
@@ -222,50 +222,44 @@ Evaluated **layout-aware** (GROBID) vs **language model** approaches across nine
 
 The evaluation surfaced recurring error patterns across layout-aware systems (GROBID), small-scale language models (SLMs), and the large generative model (`gpt_oss_20b`). These errors highlight structural limitations, context restrictions, and model-specific behaviors.
 
-### Publisher Extraction
+**Context Length Limitations**
+* For the small-scale language models—Qwen3B, Phi-4-mini, and Llama3B—only the first page of each article was passed as input. This restriction was necessary to remain within token limits, since providing additional pages frequently led to truncated or malformed outputs that broke the structured JSON schema. 
+* In contrast, the larger gpt-oss model was able to process up to two pages without exceeding its capacity, still producing valid and complete structured metadata.
 
+**Publisher Extraction**
 * **GROBID** often produced expanded or collapsed forms of publisher names instead of exact strings, e.g., *“Public Library of Science PLOS”* vs *“PLOS ONE”*.
 * These semantic mismatches were heavily penalized by Levenshtein distance despite being partially correct.
 * Language models performed better, though still showed inconsistencies when publishers were abbreviated or embedded in headers/footers.
 
-### Affiliations
-
+**Affiliations**
 * **GROBID** struggled with affiliations in small fonts or visually embedded in layout elements, frequently omitting them.
 * **SLMs** missed affiliations when they appeared beyond the first page, due to input length constraints.
-* **Large LLM** (20B) benefited from handling longer context and achieved higher recall but at extreme computational cost.
+* **Large LM** (20B) benefited from handling longer context and achieved higher recall but at extreme computational cost.
 
-### Abstracts
-
+**Abstracts**
 * **SLMs** suffered from truncated or incomplete abstracts because only the first page was used as input. Abstracts spanning multiple pages were partially or entirely missed.
 * **Large LLM** managed multi-page input better, retaining more complete abstracts.
 * **GROBID** excelled here, consistently capturing complete abstracts with high semantic similarity to ground truth.
 
-### Keywords
-
-* **SLMs** were prone to hallucination: in several cases, they generated keywords even when none existed in the source paper. These fabricated keywords often appeared plausible but undermined metadata reliability.
-* **Large LLM** hallucinated far less frequently, showing better adherence to source text.
+**Keywords**
+* **SLMs** were prone to hallucination: in several (19) cases, they generated keywords even when none existed in the source paper. These fabricated keywords often appeared plausible but undermined metadata reliability.
+* **Large LLM** hallucinated far less frequently (only 3 cases), showing better adherence to source text.
 * **GROBID**, while not hallucinating, occasionally failed to detect non-standard keyword placements or unusual formatting.
 
-### Emails
-
+**Emails**
 * **GROBID** does not support email extraction, consistently returning empty outputs.
 * **SLMs** recovered many but not all email addresses, with variability across models.
 * **Large LLM** achieved near-perfect recovery, highlighting the value of contextual inference in free text.
 
 ---
 
-**Summary:**
+## Conclusions
+
+**Practical Advantage of LLMs:** Transformer-based LLMs can be quickly adapted to extract new metadata fields by simply adjusting the prompt—no retraining or annotated data required. This lowers resource costs and enables capabilities (e.g., extracting email addresses) that layout-aware tools like GROBID cannot handle.
 
 * **Layout-aware systems**: precise and reliable on well-structured fields (abstracts, titles, keywords), but brittle when metadata is encoded with layout nuances (publishers, affiliations).
 * **Small-scale LLMs**: competitive in recall but constrained by context length and prone to hallucination.
 * **Large-scale LLMs**: deliver the most accurate and complete metadata but are computationally impractical for large-scale deployment.
 
 ---
-
-## Conclusions
-
-**Takeaway:**
-
-* For speed and stability at scale → **GROBID**.
-* For higher recall on heterogeneous fields (emails/affiliations) with moderate cost → **SLMs (3–4B)**.
-* For peak accuracy across most fields but poor throughput → **large LLM**.
+---
