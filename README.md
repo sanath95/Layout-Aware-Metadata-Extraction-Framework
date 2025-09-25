@@ -61,9 +61,11 @@ To evaluate metadata extraction methods reliably, this project introduces a **no
 * **Final Benchmark** – Unified, machine-readable JSON records serving as a reliable reference for downstream evaluation.
 
 This framework demonstrates how **AI diversity, consensus, and selective adjudication** can replace labor-intensive manual annotation while improving robustness and generalizability. The resulting dataset offers a scalable and reproducible benchmark for metadata extraction research.
+
 <p align="center">
 <img src="./assets/methodology_2.png" alt="multi model consensus framework" width="80%"/>
 </p>
+
 ---
 
 ### Metadata Extraction with GROBID
@@ -112,9 +114,11 @@ This project implements **language model–based metadata extraction** to compar
 * **User prompts** provided the extracted extracted text from PDF in a chat-style template.
 * **Model outputs** were expected in structured JSON, validated against a Pydantic schema to ensure type correctness and required field coverage.
 * **Error handling:** Incomplete or malformed outputs were caught and replaced with empty defaults to maintain consistency.
+
 <p align="center">
 <img src="./assets/implementation_2.png" alt="metadata extraction with language models" width="50%"/>
 </p>
+
 ---
 
 ### Ground Truth for PDF Text Extraction
@@ -129,9 +133,11 @@ A curated subset of **101 first pages of arXiv papers (2014–2018)** was select
 * **Evaluation Benchmark** – This dataset serves as the reference transcript for assessing five open-source parsers: [`PyMuPDF`](https://pymupdf.readthedocs.io/en/latest/), [`pypdfium2`](https://github.com/pypdfium2-team/pypdfium2), [`pdfminer.six`](https://github.com/pdfminer/pdfminer.six), [`PyPDF2`](https://pypi.org/project/PyPDF2/), and [`pdfalto`](https://github.com/kermitt2/pdfalto).
 
 The resulting benchmark enables **quantitative, reproducible comparison** of text extraction fidelity, providing a foundation for downstream metadata extraction tasks.
+
 <p align="center">
 <img src="./assets/methodology_1.png" alt="construct ground truth for pdf extraction" width="60%"/>
 </p>
+
 ---
 
 ## Results
