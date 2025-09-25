@@ -3,6 +3,8 @@
 ## Table of contents
 1. [Environment Setup](#environment-setup)
 2. [Notebook Collection](#notebook-collection)
+    1. [Metadata Extraction](#metadata-extraction)
+    2. [PDF Extraction](#pdf-extraction)
 
 ---
 
@@ -66,11 +68,12 @@ The metadata notebooks expect an `.env` file or shell environment providing `OPE
 
 ## Notebook Collection
 
-Notebooks
+**Folder Structure**
 ```
+Notebooks
 └───metadata_extraction
-│   │   config.yaml
-│   │   grobid_config.json
+│   │   config.yaml                                # prompts, target metadata fields, extraction and evaluation models
+│   │   grobid_config.json                         # connection details for GROBID server
 │   │   create_metadata_ground_truth.ipynb
 │   │   grobid_extract_metadata.ipynb
 │   │   language_models_extract_metadata.ipynb
@@ -83,18 +86,60 @@ Notebooks
 
 ---
 
-### Metadata extraction (`Notebooks/metadata_extraction/`)
-- `config.yaml` centralizes the LLM system prompts, target metadata fields, and the list of extraction and evaluation models so you can swap APIs without editing notebook cells. Update the values to reflect the models and prompts available in your account before running the LLM workflows.
-- `grobid_config.json` stores the connection details for a running GROBID server (host, batch size, timeouts, etc.). Adjust it to point at your deployment before executing the GROBID notebook.
-- `create_metadata_ground_truth.ipynb` orchestrates an ensemble of LLM extractors. It reads PDF text, queries each model defined in `config.yaml`, reconciles disagreements at the field level, and records adjudicated JSON metadata under `data/metadata_extraction_data/metadata/`.
-- `language_models_extract_metadata.ipynb` demonstrates running local or hosted instruction-tuned models (e.g., Phi-4-mini, Qwen, GPT-OSS via Ollama) to produce structured metadata JSON. It includes utilities for paginated PDF text extraction, enforcing a Pydantic schema, and saving per-paper results to directories such as `phi4mini_demo_metadata/`.
-- `grobid_extract_metadata.ipynb` calls the GROBID service to produce TEI files and then converts them into simplified JSON metadata dumps stored in `data/metadata_extraction_data/grobid_*_metadata/`.
-- `eval_metadata_extraction.ipynb` scores multiple metadata hypotheses against the ground-truth set using string cleaning, Levenshtein distance, precision/recall/F1, and aggregation utilities that summarize performance across models.
+### Metadata Extraction
+(`Notebooks/metadata_extraction/`)
 
-### PDF extraction (`Notebooks/pdf_extraction/`)
-- `arxiv_docbank_pipeline.ipynb` seeds the corpus by querying the arXiv API, downloading PDFs, and pairing them with DocBank annotations fetched from the Hugging Face Hub. It assembles a `metadata.csv`, cached API responses, and aligned text/annotation assets under `data/pdf_extraction_data/`.
-- `data_prep_pipeline.ipynb` prepares training/evaluation inputs by running document layout detection (YOLO DocLayNet weights) and LayoutLMv3 token classifiers. It aligns detected regions with DocBank tokens, renders supporting page images, and fills missing text entries in `metadata.csv`.
-- `eval_pdf_text_extraction.ipynb` benchmarks popular PDF text extraction libraries (PyMuPDF, pypdfium2, pdfminer, PyPDF2, PDFAlto) against the DocBank ground truth, reporting WER/CER, BLEU/ROUGE, rank correlations, and summary tables saved to `data/outputs/`.
+* **create_metadata_ground_truth.ipynb**
+This notebook addresses the challenge of constructing a reliable ground‑truth metadata dataset. Given that individual LLMs may hallucinate or disagree on specific fields, the approach is to extract the full text of each PDF and query several LLMs with identical prompts. Their responses are parsed into structured JSON, compared field‑by‑field and, when all models agree, the value is accepted. When there is disagreement, a dedicated judge model is called to arbitrate. The result is a consensus metadata record that is written to disk for use as ground truth.
+
+<p align="center">
+<img src="./assets/create_metadata_ground_truth.png" alt="create metadata ground truth" width="50%"/>
+</p>
+
+* **grobid_extract_metadata.ipynb**
+This notebook provides a classical, rule‑based baseline for metadata extraction. The problem is to extract bibliographic fields from PDFs in a deterministic and reproducible manner. The approach is to use the open‑source GROBID tool on each PDF to produce structured TEI XML, then parse the XML into normalised JSON. This baseline serves both as a comparison point for LLM methods and as an additional source of metadata that could be used in ensemble systems. calls the GROBID service to produce TEI files and then converts them into simplified JSON metadata and stored for downstream use.
+
+<p align="center">
+<img src="./assets/grobid_extract_metadata.png" alt="grobid extract metadata" width="50%"/>
+</p>
+
+* **language_models_extract_metadata.ipynb**
+The goal of this notebook is to benchmark individual language models as standalone metadata extractors. Given a PDF, it is unclear how well an off‑the‑shelf LLM can recover the title, authors, affiliations and other fields. The approach is to load a chosen HuggingFace model, extract the first page of each document, craft a system prompt describing the desired JSON schema and generate a response. The notebook then parses the model’s output, validates it against a pydantic schema and writes the resulting metadata to disk along with timing information. This notebook also consists of code to run inference using the `gpt-oss` model on Ollama.
+
+<p align="center">
+<img src="./assets/language_models_extract_metadata.png" alt="language models extract metadata" width="50%"/>
+</p>
+ 
+* **eval_metadata_extraction.ipynb**
+After creating ground truth and individual predictions, the next problem is to quantitatively assess which extractors perform best on which fields. This notebook loads the ground truth and the outputs of GROBID and the various LLMs, normalises the text and computes a suite of similarity metrics (Levenshtein distance, cosine similarity, F1‑score). It aggregates these metrics into tables and plots so the reader can identify strengths and weaknesses across systems. In doing so it ties the theoretical metrics discussed in the thesis to practical results.
+
+<p align="center">
+<img src="./assets/eval_metadata_extraction.png" alt="eval metadata extraction" width="50%"/>
+</p>
+
+### PDF extraction
+(`Notebooks/pdf_extraction/`)
+
+* **arxiv_docbank_pipeline.ipynb**
+The first step in building the text‑extraction benchmark is assembling a dataset of PDFs paired with token‑level annotations. The problem is twofold: to select a diverse set of papers from arXiv (across years 2014-2018 and subject categories like CS, economics, math, etc.) and to find matching DocBank annotations. The notebook solves this by querying the arXiv API according to user‑defined categories and years, parsing the feed for article identifiers, matching those identifiers to DocBank’s annotation files via regular expressions, downloading both PDFs and annotations and saving the results in a CSV file. This curated metadata file forms the foundation for subsequent notebooks.
+
+<p align="center">
+<img src="./assets/arxiv_docbank_pipeline.png" alt="arxiv docbank pipeline" width="50%"/>
+</p>
+
+* **data_prep_pipeline.ipynb**
+Once PDFs and annotations are in place, the challenge is to recover the correct reading order of tokens on each page. this notebook implements a two‑stage approach inspired by the thesis: first run a YOLO object detector to locate layout regions, then group DocBank tokens into these regions and employ LayoutLMv3 to predict their sequence. The pipeline outputs a plain‑text file per page with tokens ordered as a human would read them, along with an annotated image showing detected regions.
+
+<p align="center">
+<img src="./assets/data_prep_pipeline.png" alt="data prep pipeline" width="50%"/>
+</p>
+
+* **eval_pdf_text_extraction.ipynb**
+With ground‑truth reading order in hand, the final step is to benchmark existing PDF parsers and quantify their shortcomings. This notebook extracts text from each PDF using five different libraries (PyMuPDF, pypdfium2, pdfminer, PyPDF2 and pdfalto), cleans the outputs and compares them to the ground truth using character‑ and word‑level error rates, semantic similarity metrics (BLEU/ROUGE) and an order error based on Kendall τ. The scores are aggregated and visualised via box plots, providing a clear empirical narrative of the observable performance differences among parsers.
+
+<p align="center">
+<img src="./assets/eval_pdf_text_extraction.png" alt="eval pdf text extraction" width="50%"/>
+</p>
 
 ---
 ---
