@@ -38,7 +38,7 @@ Since accurately extracting the linear reading order of text from PDF documents 
   * A gold-standard collection of metadata for scholarly PDFs.
 * **Parser Benchmarking** – Assesses five open-source PDF parsers on text fidelity, completeness, and logical reading order.
 * **SLM Pipeline** – Demonstrates metadata extraction using prompt-engineered, schema-constrained outputs without model retraining.
-* **Baseline Comparison** – Benchmarks layout-aware GROBID against SLM-based pipelines for accuracy, efficiency, and robustness.
+* **Baseline Comparison** – Benchmarks layout-aware [GROBID](https://github.com/kermitt2/grobid) against SLM-based pipelines for accuracy, efficiency, and robustness.
 
 **Metadata Fields**
 
@@ -54,21 +54,21 @@ To evaluate metadata extraction methods reliably, this project introduces a **no
 
 * **Document Selection** – 61 diverse born-digital PDFs sampled from publishers including PLOS, Elsevier, Springer, arXiv, PMLR, MDPI, and Frontiers Media to capture heterogeneous layouts and styles.
 * **Text Extraction** – PDFs parsed with PyMuPDF into plain text for standardized processing.
-* **Structured Outputs** – A Pydantic response schema was passed via the API call to enforce JSON-formatted responses with mandatory bibliographic fields.
-* **Multi-Model Annotations** – Metadata independently extracted by three LLMs: o3-mini, Gemini-2.5-flash-lite (Google), and Grok-3-mini (X-AI).
-* **Consensus & Adjudication** – Fields with full agreement were accepted; disagreements escalated to GPT-4.1, which resolved only the contested fields using contextual reasoning.
+* **Structured Outputs** – A [Pydantic](https://docs.pydantic.dev/latest/) response schema was passed via the API call to enforce JSON-formatted responses with mandatory bibliographic fields.
+* **Multi-Model Annotations** – Metadata independently extracted by three LLMs: [o3-mini](https://openai.com/index/openai-o3-mini/), [Gemini-2.5-flash-lite](https://deepmind.google/models/gemini/flash-lite/) (Google), and [Grok-3-mini](https://grok.com/) (X-AI).
+* **Consensus & Adjudication** – Fields with full agreement were accepted; disagreements escalated to [GPT-4.1](https://platform.openai.com/docs/models/gpt-4.1), which resolved only the contested fields using contextual reasoning.
 * **Validation** – All outputs passed through Pydantic schema checks to enforce type correctness, field coverage, and structural consistency.
 * **Final Benchmark** – Unified, machine-readable JSON records serving as a reliable reference for downstream evaluation.
 
 This framework demonstrates how **AI diversity, consensus, and selective adjudication** can replace labor-intensive manual annotation while improving robustness and generalizability. The resulting dataset offers a scalable and reproducible benchmark for metadata extraction research.
-
-![multi model consensus framework](./assets/methodology_2.png)
-
+<p align="center">
+<img src="./assets/methodology_2.png" alt="multi model consensus framework" width="80%"/>
+</p>
 ---
 
 ### Metadata Extraction with GROBID
 
-This project integrates [GROBID](https://github.com/kermitt2/grobid) for **layout-aware metadata extraction** from scholarly PDFs. GROBID is deployed in Docker and accessed via its REST API using the official Python client.
+This project integrates GROBID for **layout-aware metadata extraction** from scholarly PDFs. GROBID is deployed in Docker and accessed via its REST API using the official [Python client](https://github.com/kermitt2/grobid_client_python).
 
 **Deployment**
 
@@ -81,7 +81,7 @@ Two Docker images are supported:
 
 1. **Input PDFs** are submitted to the GROBID server via the Python client.
 2. **Metadata extraction** uses `processHeaderDocument`, returning results in TEI-XML format.
-3. **Parsing** with `lxml` + XPath extracts fields (title, authors, affiliations, publication date, publisher, DOI, keywords, abstract).
+3. **Parsing** with [`lxml`](https://lxml.de/) + XPath extracts fields (title, authors, affiliations, publication date, publisher, DOI, keywords, abstract).
    * Dates are normalized to `DD-MM-YYYY`.
    * Missing fields (e.g., emails not supported by GROBID) are filled as empty strings.
 4. **Output** is written to structured JSON files for downstream analysis.
@@ -93,14 +93,14 @@ Two Docker images are supported:
 This project implements **language model–based metadata extraction** to compare against layout-aware systems like GROBID. Transformer-based models were used to extract bibliographic fields directly from raw PDF text.
 
 **Models used:**
-* `Qwen/Qwen2.5-3B-Instruct`
-* `microsoft/Phi-4-mini-instruct`
-* `meta-llama/Llama-3.2-3B-Instruct`
-* `GPT-OSS-20B` (served via [Ollama](https://ollama.com/))
+* [`Qwen/Qwen2.5-3B-Instruct`](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct)
+* [`microsoft/Phi-4-mini-instruct`](https://huggingface.co/microsoft/Phi-4-mini-instruct)
+* [`meta-llama/Llama-3.2-3B-Instruct`](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
+* [`GPT-OSS-20B`](https://ollama.com/library/gpt-oss:20b) (served via [Ollama](https://ollama.com/))
 
 **Inference optimizations:**
-* 4-bit quantization via `BitsAndBytesConfig` for memory-efficient GPU usage.
-* PyTorch monitoring of memory and execution time (`torch.cuda.max_memory_reserved`).
+* 4-bit quantization via [`BitsAndBytesConfig`](https://github.com/bitsandbytes-foundation/bitsandbytes) for memory-efficient GPU usage.
+* [PyTorch](https://pytorch.org/) monitoring of memory and execution time (`torch.cuda.max_memory_reserved`).
 
 **PDF text extraction:**
 * First page extracted with PyMuPDF, since it reliably contains bibliographic metadata while reducing token overhead.
@@ -110,11 +110,11 @@ This project implements **language model–based metadata extraction** to compar
 
 * **System prompts** included an explicit JSON schema defining required metadata fields.
 * **User prompts** provided the extracted extracted text from PDF in a chat-style template.
-* **Model outputs** were expected in structured JSON, validated against a **Pydantic schema** to ensure type correctness and required field coverage.
+* **Model outputs** were expected in structured JSON, validated against a Pydantic schema to ensure type correctness and required field coverage.
 * **Error handling:** Incomplete or malformed outputs were caught and replaced with empty defaults to maintain consistency.
-
+<p align="center">
 <img src="./assets/implementation_2.png" alt="metadata extraction with language models" width="50%"/>
-
+</p>
 ---
 
 ### Ground Truth for PDF Text Extraction
@@ -126,12 +126,12 @@ A curated subset of **101 first pages of arXiv papers (2014–2018)** was select
 * **Source Dataset** – Built on the [DocBank corpus](https://doc-analysis.github.io/docbank-page) with token-level annotations (fonts, bounding boxes, textual content).
 * **Sampling Strategy** – Papers were chosen as the intersection of arXiv metadata and DocBank annotations, ensuring coverage of diverse layouts and styles while maintaining token-level precision.
 * **Text Construction** – Token annotations were aggregated into structural blocks via a [YOLO-DocLayNet](https://github.com/ppaanngggg/yolo-doclaynet) document layout detector, then ordered using [LayoutReader](https://github.com/ppaanngggg/layoutreader) (based on LayoutLM) to reconstruct a natural reading sequence.
-* **Evaluation Benchmark** – This dataset serves as the reference transcript for assessing five open-source parsers: `PyMuPDF`, `pypdfium2`, `pdfminer.six`, `PyPDF2`, and `pdfalto`.
+* **Evaluation Benchmark** – This dataset serves as the reference transcript for assessing five open-source parsers: [`PyMuPDF`](https://pymupdf.readthedocs.io/en/latest/), [`pypdfium2`](https://github.com/pypdfium2-team/pypdfium2), [`pdfminer.six`](https://github.com/pdfminer/pdfminer.six), [`PyPDF2`](https://pypi.org/project/PyPDF2/), and [`pdfalto`](https://github.com/kermitt2/pdfalto).
 
 The resulting benchmark enables **quantitative, reproducible comparison** of text extraction fidelity, providing a foundation for downstream metadata extraction tasks.
-
-![construct ground truth for pdf extraction](./assets/methodology_1.png)
-
+<p align="center">
+<img src="./assets/methodology_1.png" alt="construct ground truth for pdf extraction" width="60%"/>
+</p>
 ---
 
 ## Results
@@ -143,7 +143,7 @@ Evaluated **layout-aware** (GROBID) vs **language model** approaches across nine
 **Systems Compared**
 
 * **GROBID**: `BiLSTM-CRF (DL)` and `CRF (Wapiti)`.
-* **SLMs**: `Qwen/Qwen2.5-3B-Instruct`, `microsoft/Phi-4-mini-instruct`, `meta-llama/Llama-3.2-3B-Instruct`, `Qwen/Qwen3-4B-Instruct`.
+* **SLMs**: `Qwen/Qwen2.5-3B-Instruct`, `microsoft/Phi-4-mini-instruct`, `meta-llama/Llama-3.2-3B-Instruct`, [`Qwen/Qwen3-4B-Base`](https://huggingface.co/Qwen/Qwen3-4B-Base).
 * **LLM**: `gpt_oss_20b`.
 
 **Metrics**
@@ -206,8 +206,8 @@ Evaluated **layout-aware** (GROBID) vs **language model** approaches across nine
 
 **Metrics**
 
-* **CER / WER** (character & word error rates, via `jiwer`) → fidelity
-* **BLEU / ROUGE-L** (via `sacrebleu` and `rouge_score`) → order & semantic preservation
+* **CER / WER** (character & word error rates, via [`jiwer`](https://github.com/jitsi/jiwer)) → fidelity
+* **BLEU / ROUGE-L** (via [`sacrebleu`](https://github.com/mjpost/sacrebleu) and [`rouge_score`](https://github.com/google-research/google-research/tree/master/rouge)) → order & semantic preservation
 
 **Observation**
 * **pymupdf** and **pypdfium2** → best overall balance, with low error rates and stable BLEU/ROUGE scores.
