@@ -113,7 +113,7 @@ This project implements **language model–based metadata extraction** to compar
 * **Model outputs** were expected in structured JSON, validated against a **Pydantic schema** to ensure type correctness and required field coverage.
 * **Error handling:** Incomplete or malformed outputs were caught and replaced with empty defaults to maintain consistency.
 
-![metadata extraction with language models](./assets/implementation_2.png)
+<img src="./assets/implementation_2.png" alt="metadata extraction with language models" width="50%"/>
 
 ---
 
@@ -255,11 +255,27 @@ The evaluation surfaced recurring error patterns across layout-aware systems (GR
 
 ## Conclusions
 
-**Practical Advantage of LLMs:** Transformer-based LLMs can be quickly adapted to extract new metadata fields by simply adjusting the prompt—no retraining or annotated data required. This lowers resource costs and enables capabilities (e.g., extracting email addresses) that layout-aware tools like GROBID cannot handle.
-
+**Summary**
+* **Practical Advantage of LLMs:** Transformer-based LLMs can be quickly adapted to extract new metadata fields by simply adjusting the prompt—no retraining or annotated data required. This lowers resource costs and enables capabilities (e.g., extracting email addresses) that layout-aware tools like GROBID cannot handle.
 * **Layout-aware systems**: precise and reliable on well-structured fields (abstracts, titles, keywords), but brittle when metadata is encoded with layout nuances (publishers, affiliations).
 * **Small-scale LLMs**: competitive in recall but constrained by context length and prone to hallucination.
 * **Large-scale LLMs**: deliver the most accurate and complete metadata but are computationally impractical for large-scale deployment.
+Here’s a concise **README-style rewrite** of the *Limitations* and *Future Scope* sections:
+
+**Limitations**
+
+* **Dataset scope:** Only 61 PDFs and 101 DocBank pages; limited language diversity.
+* **Format coverage:** Focus on born-digital PDFs; scanned documents not evaluated.
+* **Context window constraints:** Small models restricted to first page; larger models only handle up to two pages → incomplete metadata capture.
+* **Resource profiling gaps:** Incomplete measurement for large models (gpt-oss 20B).
+
+**Future Scope**
+
+* **Hybrid pipelines:** Use layout-aware tools (fast, structured fields) + instruction-tuned LMs (flexible, variable fields).
+* **Dataset expansion:** Broaden coverage to more publishers, domains, languages, and OCR/scanned PDFs.
+* **Handling long documents:** Apply sliding-window inference or retrieval-augmented generation (RAG) to capture full multi-page metadata.
+* **Model adaptation:** Explore LoRA, prompt tuning, and domain-adaptive pretraining for cost-efficient accuracy gains.
+* **Better metrics:** Move beyond exact matches to fuzzy/semantic similarity and measure downstream impact.
 
 ---
 ---
